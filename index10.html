@@ -1,0 +1,285 @@
+  <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+  <html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></meta>
+    <script type="text/javascript" src="./jquery-1.8.2.js"></script>
+    <script type="text/javascript" src="./jquery.wysiwyg.js"></script>
+
+    <link href="jquery.wysiwyg.css" rel="stylesheet"></link>
+    <link href="http://twitter.github.com/bootstrap/assets/css/bootstrap.css" rel="stylesheet"></link>
+
+  <style>
+    .highlight1 {background-color: #ff6; color:inherit; text-decoration:inherit}
+    .highlight2 {background-color: #aff; color:inherit; text-decoration:inherit}
+    .highlight3 {background-color: #9f9; color:inherit; text-decoration:inherit}
+    .highlight4 {background-color: #f99; color:inherit; text-decoration:inherit}
+    .highlight5 {background-color: #f6f; color:inherit; text-decoration:inherit}
+    .highlight6 {background-color: #800; color:inherit; text-decoration:inherit}
+    .highlight7 {background-color: #0a0; color:inherit; text-decoration:inherit}
+    .highlight8 {background-color: #860; color:inherit; text-decoration:inherit}
+    .highlight9 {background-color: #049; color:inherit; text-decoration:inherit}
+    .highlight10 {background-color: #909; color:inherit; text-decoration:inherit}
+  </style>
+
+  <script type="text/javascript">
+
+    var references = [];
+    var referencesCurrent = [];
+    var referencesContent = [];
+    var refCounter = 0;
+
+    function stripHighlights() {
+      references = [];
+      referencesCurrent = [];
+      referencesContent = [];
+      $('.references').find('option').remove().end();
+      $('span.highlight').contents().unwrap();
+    }
+
+    function removeRef(node, key) {
+      $(node).contents().each(function(i, e) {
+        switch (this.nodeType) {
+          case 1:
+            removeRef($(this),key);
+          case 8:
+            if (e.nodeValue != null && e.nodeValue == key) {
+              $(this).remove();
+            }
+        }
+      });
+    }
+
+    function addHighlights(node) {
+      $(node).contents().each(function(i, e) {
+        switch (this.nodeType) {
+          case 1:
+            addHighlights($(this));
+          case 3:
+            if (referencesCurrent.length > 0) {
+              $(this).wrap('<span class="highlight highlight' + referencesCurrent.length + '" />');
+
+              for (i=0;i<referencesCurrent.length;i++) {
+                var key = referencesCurrent[i];
+                var hasKey = false;
+                for (i2=0;i2<referencesContent.length;i2++) {
+                  var content = referencesContent[i2];
+                  if (content[0] == key) {
+                    var value = e.nodeValue;
+                    if (value != null && value != 'null') content[1] += value;
+                    hasKey = true;
+                  }
+                }
+                if (hasKey == false) {
+                  referencesContent.push([key, e.nodeValue]);
+                }
+              }
+            }
+          case 8:
+            if (e.nodeValue != null && e.nodeValue.match(/(?:R|r)(?:E|e)(?:F|f)\d{1,2}/g) != null) {
+              var ref = trim(e.nodeValue);
+
+              var refNumber = eval(ref.match(/\d{1,2}/g)[0]);
+              if (refNumber > refCounter) refCounter = refNumber;
+
+              if ($.inArray(ref, referencesCurrent) >= 0) {
+                for (var i=referencesCurrent.length-1; i>=0; i--) {
+                    if (referencesCurrent[i] === ref) {
+                        referencesCurrent.splice(i, 1);
+                        break;
+                    }
+                }
+              } else {
+                references.push(ref);
+                referencesCurrent.push(ref);
+                $('.references')
+                     .append($("<option></option>")
+                     .attr("value",ref)
+                     .text(ref));
+                $(this).wrap('<a href="#' + ref + '" />');
+
+              }
+            }
+        }
+      });
+    }
+
+    function trim(value) {     
+      return value.replace(/^s+/g,'').replace(/s+$/g,'')     
+    }
+
+    function getSelectedText(){ 
+      if(window.getSelection){ 
+        return window.getSelection().toString(); 
+      } else if(document.getSelection){ 
+        return document.getSelection(); 
+      } else if(document.selection){ 
+        return document.selection.createRange().text; 
+      } 
+    } 
+
+
+    function getSelectionObject(){ 
+      if(window.getSelection){ 
+        return window.getSelection(); 
+      } else if(document.getSelection){ 
+        return document.getSelection(); 
+      } else if(document.selection){ 
+        return document.selection; 
+      } 
+    } 
+
+    function pad(num, size) {
+      var s = "0000000000" + num;
+      return s.substr(s.length-size);
+    }
+
+    $(document).ready(function() {
+      addHighlights($(".reference-content"));
+      $(".btn-clear-hightlighting").click(function() {
+        stripHighlights();
+        addHighlights($(".reference-content"));
+      });
+
+      $(".btn-edit-content").click(function() {
+        var html = $(".reference-content").html();
+
+        //console.log("html: " + html);
+        //console.log(".wysiwyg: " + $("textarea .wysiwyg").val(html));
+
+        $('.wysiwyg').wysiwyg('setContent',html).wysiwyg("destroy");
+        $('.wysiwyg').wysiwyg({ autoGrow: true, maxHeight: 600, formWidth: 800});
+
+        
+        $(".reference-content").hide();
+        $(".wysiwyg-div").show();
+      });
+
+      $(".wysiwyg").wysiwyg();
+
+      $(".btn-add-ref").click(function() {
+        var selectedText = getSelectedText();
+        console.log("selectedText: " + selectedText);
+
+        refCounter++;
+        var refCounterFormated = pad(refCounter, 2);
+
+        if (window.getSelection) {
+            // not IE case
+            var selObj = window.getSelection();
+            var selRange = selObj.getRangeAt(0);
+
+            var startComment = document.createComment(" ref" + refCounterFormated);
+            var endComment = document.createComment(" ref" + refCounterFormated);
+            var documentFragment = selRange.extractContents();
+
+            documentFragment.insertBefore(startComment,documentFragment.firstChild);
+
+            documentFragment.appendChild(endComment);
+            selRange.insertNode(documentFragment);
+
+            selObj.removeAllRanges();
+        } else if (document.selection && document.selection.createRange && document.selection.type != "None") {
+            // IE case
+            var range = document.selection.createRange();
+            var selectedText = range.htmlText;
+            var newText = '<!-- ref' + refCounterFormated + ' -->' + selectedText + '<!-- ref' + refCounterFormated + ' -->';
+            document.selection.createRange().pasteHTML(newText);
+        }
+
+        referencesContent.push(["ref" + refCounterFormated, selectedText]);
+
+        stripHighlights();
+        addHighlights($(".reference-content"));
+      });
+
+      $(".references").click(function() {
+        for (i2=0;i2<referencesContent.length;i2++) {
+          var content = referencesContent[i2];
+          if (content[0] == this.value) {
+            $(".question").val(content[1]);
+          }
+        }
+      });
+
+      $(".btn-remove-ref").click(function() {
+        var key = $(".references option:selected").val();
+        removeRef($('.reference-content'), key);
+
+        stripHighlights();
+        addHighlights($(".reference-content"));
+      });
+
+    });
+  </script>
+
+
+  </head>
+  <body>
+
+
+  <div class="container">
+
+    <div class="row-fluid">
+        <div class="row-fluid">
+          <div class="span6">
+            <div class="alert alert-success" style="min-height: 150px;">
+              <h3>References</h3>
+              <select size="4" class="references" >
+              </select>
+              <a href="#remove" class="btn btn-remove-ref">Remove</a>
+            </div>
+          </div>
+          <div class="span6">
+            <div class="alert alert-info" style="min-height: 150px;">
+              <h3>Question</h3>
+              <textarea class="question" style="min-height: 67px; min-width: 400px;">
+              </textarea>
+            </div>
+          </div>
+        </div>
+    </div>
+
+
+
+  <div class="alert alert-warning">
+    <div class="wysiwyg-div well" style="display: none; min-width: 800px; min-height: 500px;">
+      <textarea class="wysiwyg" style="min-width: 800px; min-height: 500px;"></textarea>
+    </div>
+    <div class="reference-content well">
+
+
+    <h2>The quick <!-- ref01 -->brown<!-- ref01 --> fox <a href="http://www.urbandictionary.com/define.php?term=jum">jum</a>ped</h2>
+  <p><em>over</em> the laz<u>y</u> dog.</p>
+  <p>The quick <!-- ref02 -->brown fox jumped <sup>over</sup> the lazy dog.</p>
+  <p>cats<!-- ref02 --> are cool</p>
+  <h2>The quick brown fox <a href="http://www.urbandictionary.com/define.php?term=jum">jum</a>ped</h2>
+  <p><em>over</em> the <!-- ref03 -->laz<u>y</u> dog.</p>
+  <p>The quick red fox <span style="background-color:blue">jumped</span> <sup>over</sup> the lazy dog.</p>
+  <p>The quick < brown is than 0 fox jump<s>ed</s>s<!-- ref03 --> <s>over</s> the lazy dog.</p>
+  <p>The quick brown fox <span style="font-size:large">j</span><span style="font-size:x-large">u</span><span style="font-size:xx-large">m</span><span style="font-size:xx-large">p</span><span style="font-size:x-large">e</span><span style="font-size:large">d</span> over the lazy dog.</p>
+  <p>The quick brown fox <span style="font-size:22px"><span style="color:red">j</span><span style="color:green">u</span><span style="color:blue">m</span><span style="color:purple">p</span><span style="color:teal">e</span><span style="color:maroon">d</span></span> over the lazy dog.</p>
+
+<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+<p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?</p>
+<p>At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non provident, similique sunt in culpa qui officia deserunt mollitia animi, id est laborum et dolorum fuga. Et harum quidem rerum facilis est et expedita distinctio. Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime placeat facere possimus, omnis voluptas assumenda est, omnis dolor repellendus. Temporibus autem quibusdam et aut officiis debitis aut rerum necessitatibus saepe eveniet ut et voluptates repudiandae sint et molestiae non recusandae. Itaque earum rerum hic tenetur a sapiente delectus, ut aut reiciendis voluptatibus maiores alias consequatur aut perferendis doloribus asperiores repellat.</p>
+<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+<p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?</p>
+<p>At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non provident, similique sunt in culpa qui officia deserunt mollitia animi, id est laborum et dolorum fuga. Et harum quidem rerum facilis est et expedita distinctio. Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime placeat facere possimus, omnis voluptas assumenda est, omnis dolor repellendus. Temporibus autem quibusdam et aut officiis debitis aut rerum necessitatibus saepe eveniet ut et voluptates repudiandae sint et molestiae non recusandae. Itaque earum rerum hic tenetur a sapiente delectus, ut aut reiciendis voluptatibus maiores alias consequatur aut perferendis doloribus asperiores repellat.</p>
+<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+<p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?</p>
+<p>At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non provident, similique sunt in culpa qui officia deserunt mollitia animi, id est laborum et dolorum fuga. Et harum quidem rerum facilis est et expedita distinctio. Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime placeat facere possimus, omnis voluptas assumenda est, omnis dolor repellendus. Temporibus autem quibusdam et aut officiis debitis aut rerum necessitatibus saepe eveniet ut et voluptates repudiandae sint et molestiae non recusandae. Itaque earum rerum hic tenetur a sapiente delectus, ut aut reiciendis voluptatibus maiores alias consequatur aut perferendis doloribus asperiores repellat.</p>
+<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+<p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque <!-- ref04 -->porro quisquam est<!-- ref04 -->, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?</p>
+<p>At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non provident, similique sunt in culpa qui officia deserunt mollitia animi, id est laborum et dolorum fuga. Et harum quidem rerum facilis est et expedita distinctio. Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime placeat facere possimus, omnis voluptas assumenda est, omnis dolor repellendus. Temporibus autem quibusdam et aut officiis debitis aut rerum necessitatibus saepe eveniet ut et voluptates repudiandae sint et molestiae non recusandae. Itaque earum rerum hic tenetur a sapiente delectus, ut aut reiciendis voluptatibus maiores alias consequatur aut perferendis doloribus asperiores repellat.</p>
+
+    </div>
+  </div>
+    <div class="actions">
+      <a class="btn btn-primary btn-add-ref" href="#grab">Create Reference</a>
+      <a class="btn btn-primary btn-edit-content" href="#edit">Edit</a>
+    </div>
+
+  </div>
+
+  </body>
+  </html>

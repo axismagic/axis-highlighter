@@ -1,0 +1,91 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head profile="http://gmpg.org/xfn/11"><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<body screen_capture_injected="true">
+
+<script type="text/javascript" src="./jquery-1.8.2.js"></script>
+
+<style>
+.highlight {background-color:yellow;color:inherit;text-decoration:inherit}
+</style>
+
+<script type="text/javascript">
+$(document).ready(function() {
+  
+var i = 0;
+var highlightMode = false;
+
+$("#test *").each(function(index, element) {
+//  console.log(i++ + $(element).html());
+
+  var cmts = $(element).html().split(/<!--\s(?:R|r)(?:E|e)(?:F|f)/);
+  // var cmts = $(element).html().split(/<!--\sref/);
+
+  var html = "";
+
+  console.log("cmts.size: " + cmts.length);
+  if (cmts.length > 1) {
+    for (var i=0;i<cmts.length;i++) {
+      var cmt = cmts[i];
+      console.log("search: " + cmt.search(/^\d{1,2}\s-->/));
+      if (cmt.search(/^\d{1,2}\s-->/) >= 0) {
+          if (highlightMode == false) {
+            html += '<span class="highlight"><!-- ref' + cmt;
+            highlightMode = true;  
+          } else {
+            html += '</span><!-- ref' + cmt;
+            highlightMode = false;  
+          }
+      } else {
+        html += cmt;
+      }
+
+
+      console.log("cmt:" + cmt);
+      console.log("html: " + html);
+
+    }
+
+  } else {
+    html = $(element).html();
+  }
+    
+  $(element).html(html);
+
+
+    // $(element).contents().filter(
+    //     function(){ return this.nodeType == 8;}
+    // ).each(
+    //     function(i, e){
+    //       console.log("highlightMode: " + highlightMode + "  " + i);
+    //         console.log(e.nodeValue);
+    //       if (highlightMode == false) {
+    //         $('<span class="highlight">').before($(e));
+    //         highlightMode = true;  
+    //       } else {
+    //         $('</span>').after($(e));
+    //         highlightMode = false;  
+    //       }
+    //     }  
+//                console.log(e.nodeValue);
+    // );
+
+
+  //  $(element).css("background-color", "#ffaaaa");
+});
+
+
+
+});
+</script>
+
+<blockquote id="test">
+
+
+  <h2>The quick <!-- ref01 -->brown<!-- ref01 --> fox <a href="http://www.urbandictionary.com/define.php?term=jum">jum</a>ped</h2>
+<p><em>over</em> the laz<u>y</u> dog.</p>
+<p>The quick <!-- ref02 -->brown fox jumped<!-- ref02 --> <sup>over</sup> the lazy dog.</p>
+</blockquote>
+
+</body>
+</html>
