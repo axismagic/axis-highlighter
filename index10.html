@@ -34,6 +34,7 @@
       referencesContent = [];
       $('.references').find('option').remove().end();
       $('span.highlight').contents().unwrap();
+      $('a.ref').contents().unwrap();
     }
 
     function removeRef(node, key) {
@@ -42,7 +43,8 @@
           case 1:
             removeRef($(this),key);
           case 8:
-            if (e.nodeValue != null && e.nodeValue == key) {
+            var ref = trim(e.nodeValue);
+            if (ref != null && ref == key) {
               $(this).remove();
             }
         }
@@ -95,7 +97,7 @@
                      .append($("<option></option>")
                      .attr("value",ref)
                      .text(ref));
-                $(this).wrap('<a href="#' + ref + '" />');
+                $(this).wrap('<a href="#' + ref + '" class="ref"/>');
 
               }
             }
@@ -104,7 +106,7 @@
     }
 
     function trim(value) {     
-      return value.replace(/^s+/g,'').replace(/s+$/g,'')     
+      return value == null ? null : value.replace(/^\s+/g,'').replace(/\s+$/g,'');
     }
 
     function getSelectedText(){ 
@@ -116,7 +118,6 @@
         return document.selection.createRange().text; 
       } 
     } 
-
 
     function getSelectionObject(){ 
       if(window.getSelection){ 
