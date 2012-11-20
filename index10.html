@@ -34,7 +34,6 @@
       referencesContent = [];
       $('.references').find('option').remove().end();
       $('span.highlight').contents().unwrap();
-      $('a.ref').contents().unwrap();
     }
 
     function removeRef(node, key) {
@@ -43,8 +42,7 @@
           case 1:
             removeRef($(this),key);
           case 8:
-            var ref = trim(e.nodeValue);
-            if (ref != null && ref == key) {
+            if (e.nodeValue != null && e.nodeValue == key) {
               $(this).remove();
             }
         }
@@ -58,10 +56,16 @@
             addHighlights($(this));
           case 3:
             if (referencesCurrent.length > 0) {
-              $(this).wrap('<span class="highlight highlight' + referencesCurrent.length + '" />');
+              var spanTitle = "";
+              for (i=0;i<referencesCurrent.length;i++) {
+                if (spanTitle.length > 0) spanTitle += ",";
+                spanTitle += trim(referencesCurrent[i]);
+              }
+
+              $(this).wrap('<span class="highlight highlight' + referencesCurrent.length + '" title="' + spanTitle + '" />');
 
               for (i=0;i<referencesCurrent.length;i++) {
-                var key = referencesCurrent[i];
+                var key = trim(referencesCurrent[i]);
                 var hasKey = false;
                 for (i2=0;i2<referencesContent.length;i2++) {
                   var content = referencesContent[i2];
@@ -97,7 +101,7 @@
                      .append($("<option></option>")
                      .attr("value",ref)
                      .text(ref));
-                $(this).wrap('<a href="#' + ref + '" class="ref"/>');
+                $(this).wrap('<a href="#' + ref.replace(/\s/g,"") + '" class="anchor-' + ref.replace(/\s/g,"") + '" />');
 
               }
             }
@@ -106,7 +110,7 @@
     }
 
     function trim(value) {     
-      return value == null ? null : value.replace(/^\s+/g,'').replace(/\s+$/g,'');
+      return value.replace(/^s+/g,'').replace(/s+$/g,'')     
     }
 
     function getSelectedText(){ 
@@ -119,6 +123,7 @@
       } 
     } 
 
+
     function getSelectionObject(){ 
       if(window.getSelection){ 
         return window.getSelection(); 
@@ -128,6 +133,19 @@
         return document.selection; 
       } 
     } 
+
+    function gotoReference() {
+      var key = $(".references option:selected").val();
+      if (key != null && key.length > 0) {
+        var ref = trim(key);
+        var anchorTag = "anchor-" + ref.replace(/\s/g,"");
+        $(document.body).animate({
+            'scrollTop':   $('.' + anchorTag).offset().top
+        }, 1000);
+      } else {
+        $('.alert-error').html("You must first select a reference before you can go to it.").fadeIn().delay(2000).fadeOut('slow');
+      }
+    }
 
     function pad(num, size) {
       var s = "0000000000" + num;
@@ -161,36 +179,40 @@
         var selectedText = getSelectedText();
         console.log("selectedText: " + selectedText);
 
-        refCounter++;
-        var refCounterFormated = pad(refCounter, 2);
+        if (selectedText != null && selectedText.length > 0) {
+          refCounter++;
+          var refCounterFormated = pad(refCounter, 2);
 
-        if (window.getSelection) {
-            // not IE case
-            var selObj = window.getSelection();
-            var selRange = selObj.getRangeAt(0);
+          if (window.getSelection) {
+              // not IE case
+              var selObj = window.getSelection();
+              var selRange = selObj.getRangeAt(0);
 
-            var startComment = document.createComment(" ref" + refCounterFormated);
-            var endComment = document.createComment(" ref" + refCounterFormated);
-            var documentFragment = selRange.extractContents();
+              var startComment = document.createComment(" ref" + refCounterFormated);
+              var endComment = document.createComment(" ref" + refCounterFormated);
+              var documentFragment = selRange.extractContents();
 
-            documentFragment.insertBefore(startComment,documentFragment.firstChild);
+              documentFragment.insertBefore(startComment,documentFragment.firstChild);
 
-            documentFragment.appendChild(endComment);
-            selRange.insertNode(documentFragment);
+              documentFragment.appendChild(endComment);
+              selRange.insertNode(documentFragment);
 
-            selObj.removeAllRanges();
-        } else if (document.selection && document.selection.createRange && document.selection.type != "None") {
-            // IE case
-            var range = document.selection.createRange();
-            var selectedText = range.htmlText;
-            var newText = '<!-- ref' + refCounterFormated + ' -->' + selectedText + '<!-- ref' + refCounterFormated + ' -->';
-            document.selection.createRange().pasteHTML(newText);
+              selObj.removeAllRanges();
+          } else if (document.selection && document.selection.createRange && document.selection.type != "None") {
+              // IE case
+              var range = document.selection.createRange();
+              var selectedText = range.htmlText;
+              var newText = '<!-- ref' + refCounterFormated + ' -->' + selectedText + '<!-- ref' + refCounterFormated + ' -->';
+              document.selection.createRange().pasteHTML(newText);
+          }
+
+          referencesContent.push(["ref" + refCounterFormated, selectedText]);
+
+          stripHighlights();
+          addHighlights($(".reference-content"));
+        } else {
+          $('.alert-error').html("You must first select text before you can create a reference.").fadeIn().delay(2000).fadeOut('slow');
         }
-
-        referencesContent.push(["ref" + refCounterFormated, selectedText]);
-
-        stripHighlights();
-        addHighlights($(".reference-content"));
       });
 
       $(".references").click(function() {
@@ -202,12 +224,24 @@
         }
       });
 
+      
+      $(".references").dblclick(function() {
+        gotoReference();
+      });
+
+      $(".btn-goto-ref").click(function() {
+        gotoReference();
+      });
+
       $(".btn-remove-ref").click(function() {
         var key = $(".references option:selected").val();
-        removeRef($('.reference-content'), key);
-
-        stripHighlights();
-        addHighlights($(".reference-content"));
+        if (key != null && key.length > 0) {
+          removeRef($('.reference-content'), key);
+          stripHighlights();
+          addHighlights($(".reference-content"));
+        } else {
+          $('.alert-error').html("You must first select a reference before you can remove it.").fadeIn().delay(2000).fadeOut('slow');
+        }
       });
 
     });
@@ -217,23 +251,29 @@
   </head>
   <body>
 
-
   <div class="container">
+
+    <div class="alert alert-error" style="display: none;">
+    </div>
 
     <div class="row-fluid">
         <div class="row-fluid">
           <div class="span6">
-            <div class="alert alert-success" style="min-height: 150px;">
+            <div class="alert alert-success" style="min-height: 180px;">
               <h3>References</h3>
-              <select size="4" class="references" >
+              <select size="4" class="references" style="min-width: 400px;">
               </select>
-              <a href="#remove" class="btn btn-remove-ref">Remove</a>
+              <div>
+                <a href="#grab" class="btn btn-primary btn-add-ref">Create</a>
+                <a href="#remove" class="btn btn-remove-ref">Remove</a>
+                <a href="#goto" class="btn btn-goto-ref">Go To</a>
+              </div>
             </div>
           </div>
           <div class="span6">
-            <div class="alert alert-info" style="min-height: 150px;">
+            <div class="alert alert-info" style="min-height: 180px;">
               <h3>Question</h3>
-              <textarea class="question" style="min-height: 67px; min-width: 400px;">
+              <textarea class="question" style="min-height: 67px; min-width: 400px;" readonly="readonly">
               </textarea>
             </div>
           </div>
@@ -276,7 +316,6 @@
     </div>
   </div>
     <div class="actions">
-      <a class="btn btn-primary btn-add-ref" href="#grab">Create Reference</a>
       <a class="btn btn-primary btn-edit-content" href="#edit">Edit</a>
     </div>
 
