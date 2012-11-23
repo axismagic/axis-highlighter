@@ -1,0 +1,1 @@
+define({ "ref.button.add.quote": "Format selection as quote", "ref.button.add.blockquote": "Format selection as blockquote" });
