@@ -157,14 +157,7 @@
       return s.substr(s.length-size);
     }
 
-    $(document).ready(function() {
-      addHighlights($(".reference-content"));
-      $(".btn-clear-hightlighting").click(function() {
-        stripHighlights();
-        addHighlights($(".reference-content"));
-      });
-
-      $(".btn-add-ref").click(function() {
+    function createReference() {
         var selectedText = getSelectedText();
         console.log("selectedText: " + selectedText);
 
@@ -202,6 +195,17 @@
         } else {
           $('.alert-error').html("You must first select text before you can create a reference.").fadeIn().delay(2000).fadeOut('slow');
         }
+    }
+
+    $(document).ready(function() {
+      addHighlights($(".reference-content"));
+      $(".btn-clear-hightlighting").click(function() {
+        stripHighlights();
+        addHighlights($(".reference-content"));
+      });
+
+      $(".btn-add-ref").click(function() {
+        createReference();
       });
 
       $(".references").click(function() {

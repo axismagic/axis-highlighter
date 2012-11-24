@@ -1,30 +1,3 @@
-/* characterpicker-plugin.js is part of Aloha Editor project http://aloha-editor.org
- *
- * Aloha Editor is a WYSIWYG HTML5 inline editing library and editor. 
- * Copyright (c) 2010-2012 Gentics Software GmbH, Vienna, Austria.
- * Contributors http://aloha-editor.org/contribution.php 
- * 
- * Aloha Editor is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or any later version.
- *
- * Aloha Editor is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
- * 
- * As an additional permission to the GNU GPL version 2, you may distribute
- * non-source (e.g., minimized or compacted) forms of the Aloha-Editor
- * source code without the copy of the GNU GPL normally required,
- * provided you include this license notice and a URL through which
- * recipients can access the Corresponding Source.
- */
-
 define([
 	'aloha', 
 	'jquery', 
@@ -33,7 +6,8 @@ define([
 	'ui/button',
 	'ui/floating',
 	'PubSub',
-	'i18n!characterpicker/nls/i18n', 
+	'css!ref/css/ref.css',
+	'i18n!ref/nls/i18n', 
 	'i18n!aloha/nls/i18n'
 ], function(Aloha,
             jQuery,
@@ -42,6 +16,7 @@ define([
 			Button,
 			Floating,
 			PubSub,
+			css,
 			i18n,
 			i18nCore) {
 	'use strict';
@@ -61,7 +36,6 @@ define([
 		self.$tbody = self.$node.find('tbody');
 		self.$node.appendTo(jQuery('body'));
 		self._initHideOnDocumentClick();
-		self._initHideOnEsc();
 		self._initCursorFocus(onSelectCallback);
 		self._initEvents();
 	}
@@ -124,7 +98,7 @@ define([
 				e.stopPropagation();
 			});
 
-			var buttonSelector = '.aloha-icon-characterpicker';
+			var buttonSelector = '.aloha-icon-ref';
 			// hide the layer if user clicks anywhere in the body
 			jQuery('body').click(function (e) {
 				if (!self._overlayActive) {
@@ -135,16 +109,6 @@ define([
 				    // and don't consider clicks to the 'show' button.
 					&& !jQuery(e.target).is(buttonSelector)
 					&& !jQuery(e.target).find(buttonSelector).length) {
-					self.hide();
-				}
-			});
-		},
-		_initHideOnEsc: function () {
-			var self = this;
-			// escape closes the overlay
-			jQuery(document).keyup(function (e) {
-				var overlayVisibleAndEscapeKeyPressed = (self.$node.css('display') === 'table') && (e.keyCode === 27);
-				if (overlayVisibleAndEscapeKeyPressed) {
 					self.hide();
 				}
 			});
@@ -254,9 +218,9 @@ define([
 		}
 	};
 
-	return Plugin.create('characterpicker', {
+	return Plugin.create('ref', {
 		_constructor: function () {
-			this._super('characterpicker');
+			this._super('ref');
 		},
 
 		/**
@@ -268,43 +232,31 @@ define([
 			var self = this;
 
 			if ( typeof Aloha.settings.plugins != 'undefined' 
-				&& typeof Aloha.settings.plugins.characterpicker != 'undefined' ) {
-				self.settings = Aloha.settings.plugins.characterpicker;
+				&& typeof Aloha.settings.plugins.ref != 'undefined' ) {
+				self.settings = Aloha.settings.plugins.ref;
 			}
 			
-			this._characterPickerButton = Ui.adopt("characterPicker", Button, {
-				tooltip: i18n.t('button.addcharacter.tooltip'),
-				icon: "aloha-icon-characterpicker",
+			this._refButton = Ui.adopt("characterPicker", Button, {
+				tooltip: i18n.t('button.createreference.tooltip'),
+				icon: "aloha-icon-ref",
 				scope: 'Aloha.continuoustext',
 				click: function() {
-					if (false !== self.characterOverlay) {
-						_savedRange = Aloha.Selection.rangeObject;
-						self.characterOverlay.show(this.element);
-					}
+					createReference();
 				}
 			});
-
-			// Populate the cache lazily
-			setTimeout(function(){ initCache(0); }, 100);
-			function initCache(i) {
-				if (i < Aloha.editables.length) {
-					self.getOverlayForEditable(Aloha.editables[i]);
-					setTimeout(function(){ initCache(i + 1); }, 100);
-				}
-			}
 
 			Aloha.bind('aloha-editable-activated', function (event, data) {
 				self.characterOverlay = self.getOverlayForEditable(data.editable);
 				if (self.characterOverlay) {
-					self._characterPickerButton.show();
+					self._refButton.show();
 				} else {
-					self._characterPickerButton.hide();
+					self._refButton.hide();
 				}
 			});
 			
 			PubSub.sub('aloha.floating.changed', function(message) {
 				self.characterOverlay.offset = message.position.offset;
-				self.characterOverlay.$node.css(calculateOffset(self.characterOverlay, self._characterPickerButton.element));
+				self.characterOverlay.$node.css(calculateOffset(self.characterOverlay, self._refButton.element));
 			});
 		},
 

@@ -1,4 +1,4 @@
-.aloha-character-picker-overlay {
+.aloha-ref-overlay {
     position: absolute;
     display: none;
     float: left;
@@ -12,15 +12,15 @@
 	width: 400px !important;
 }
 
-.aloha-character-picker-overlay {
+.aloha-ref-overlay {
 	border-collapse:collapse;
 }
 
-.aloha-character-picker-overlay td, .aloha-character-picker-overlay tr, .aloha-character-picker-overlay th {
+.aloha-ref-overlay td, .aloha-ref-overlay tr, .aloha-ref-overlay th {
 	background-color: #fff !important;
 }
 
-.aloha-character-picker-overlay td {
+.aloha-ref-overlay td {
     width: 1.5em !important;
     height: 1.5em !important;
     border: 1px solid #afafaf !important;
@@ -28,16 +28,16 @@
     padding: 0.05em !important;
 }
 
-.aloha-character-picker-overlay td.mouseover {
+.aloha-ref-overlay td.mouseover {
     border: 1px solid #fdea83 !important;
     background-color: #fefce1 !important;
 }
 
-.aloha-character-picker-overlay td.focused {
+.aloha-ref-overlay td.focused {
     border: 1px solid #407bcf !important;
     background-color: #b9d6f9 !important;
 }
 
-.aloha-icon-characterpicker {
-    background: url( '../img/icon.png' );
+.aloha-icon-ref {
+    background: url( '../img/ref.png' );
 }

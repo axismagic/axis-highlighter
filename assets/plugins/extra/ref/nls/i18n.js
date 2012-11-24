@@ -1,6 +1,6 @@
 define({
 	"root":  {
-		"button.addcharacter.tooltip": "pick special characters"
+		"button.createreference.tooltip": "create reference"
 	},
 		"ca": true,
 		"de": true,
