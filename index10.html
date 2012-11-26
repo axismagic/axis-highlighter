@@ -26,6 +26,87 @@
     .highlight10 {background-color: #909; color:inherit; text-decoration:inherit}
   </style>
 
+
+<script>
+  var Aloha = window.Aloha || ( window.Aloha = {} );
+  
+
+  Aloha.settings = {
+    locale: 'en',
+    plugins: {
+      format: {
+        config: [  'b', 'i', 'p', 'sub', 'sup', 'del', 'title', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'pre', 'removeFormat' ],
+          editables : {
+          // no formatting allowed for title
+          '.reference-content'  : [ ]
+          }
+      },
+      link: {
+        editables : {
+          // No links in the title.
+          '.reference-content'  : [  ]
+          }
+      },      
+
+      list: {
+        editables : {
+          // No lists in the title.
+          '.reference-content'  : [  ]
+          }
+      },
+      abbr: {
+        editables : {
+          // No abbr in the title.
+          '.reference-content'  : [  ]
+          }
+      },
+      image: {
+        'fixedAspectRatio': true,
+        'maxWidth': 1024,
+        'minWidth': 10,
+        'maxHeight': 786,
+        'minHeight': 10,
+        'globalselector': '.global',
+        'ui': {
+          'oneTab': false
+        },
+        editables : {
+          // No images in the title.
+          '.reference-content'  : [  ]
+          }
+      }
+    },
+    sidebar: {
+      disabled: true
+    },
+    toolbar:  {
+      tabs: [
+          {
+              label: 'References',
+              components: [
+                  [ 'ref' ]
+              ]
+          }
+      ]
+    }
+  };
+
+
+</script>
+<script src="assets/javascript/aloha.js" data-aloha-plugins="common/ui,common/format,common/highlighteditables,common/link,extra/ref"></script>
+
+<!-- turn an element into editable Aloha continuous text -->
+<script type="text/javascript">
+Aloha.ready(function() {
+  Aloha.jQuery('.reference-content').aloha();
+});
+
+</script>
+
+
+
+
+
   <script type="text/javascript">
 
     var references = [];
@@ -239,9 +320,8 @@
 
     });
 
-    Aloha.ready( function() {
-      Aloha.jQuery('.reference-content').aloha();
-    });
+
+
   </script>
 
 
