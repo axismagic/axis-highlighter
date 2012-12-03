@@ -31,6 +31,15 @@
 
     .reference-content {height: 400px; overflow: auto;}
     .context-menu {font-size: small;}
+
+    a.disabled-link,
+    a.disabled-link:visited ,
+    a.disabled-link:active,
+    a.disabled-link:hover {
+      background-color:#d9d9d9 !important;
+      color:#aaa !important;
+    }
+​
   </style>
 
 
@@ -104,7 +113,7 @@
 <!-- turn an element into editable Aloha continuous text -->
 <script type="text/javascript">
 Aloha.ready(function() {
-  // Aloha.jQuery('.reference-content').aloha();
+  //Aloha.jQuery('.reference-content').aloha();
 });
 
 </script>
@@ -129,7 +138,9 @@ Aloha.ready(function() {
     }
 
     function addContextMenu() {
+      console.log("inside addContextMenu...");
       $('span.highlight').attr("data-toggle", "context");
+      $('div.reference-content').attr("data-toggle", "context");
     }
 
     function removeRef(node, key) {
@@ -311,13 +322,17 @@ Aloha.ready(function() {
           }
         }
       });
-      
+
       $(".references").dblclick(function() {
         gotoReference();
       });
 
       $(".btn-goto-ref").click(function() {
         gotoReference();
+      });
+
+      $(".btn-create-context-menu").click(function() {
+        addContextMenu();
       });
 
       $(".btn-remove-ref").click(function() {
@@ -330,6 +345,10 @@ Aloha.ready(function() {
         } else {
           $('.alert-error').html("You must first select a reference before you can remove it.").fadeIn().delay(2000).fadeOut('slow');
         }
+      });
+
+      $(".create-ref").click(function() {
+        createReference();
       });
 
       $(".remove-ref").click(function() {
@@ -382,6 +401,7 @@ Aloha.ready(function() {
 
     <div id="context-menu" class="context-menu">
       <ul class="dropdown-menu" role="menu">
+        <li><a tabindex="-1" href="#create-ref" class="create-ref">Create Reference</a></li>
         <li><a tabindex="-1" href="#remove-ref" class="remove-ref">Remove Reference</a></li>
       </ul>
     </div>
