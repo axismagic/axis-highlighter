@@ -9,9 +9,12 @@
     <script type="text/javascript" src="./jquery.wysiwyg.js"></script>
 
     <script src="assets/javascript/require.js"></script>
-    <script src="assets/javascript/jquery-1.7.2.js"></script>
     <script src="assets/javascript/jquery.scrollTo-min.js"></script>
-    <script src="assets/javascript/bootstrap-contextmenu.js"></script>
+    
+    <script src="assets/context-menu/jquery.ui.position.js" type="text/javascript"></script>
+    <script src="assets/context-menu/jquery.contextMenu2.js" type="text/javascript"></script>
+    
+    <link href="assets/context-menu/jquery.contextMenu.css" rel="stylesheet" type="text/css" />
 
     <script src="assets/javascript/nicEdit.js"></script>
 
@@ -27,8 +30,26 @@
     .highlight9 {background-color: #049; color:inherit; text-decoration:inherit}
     .highlight10 {background-color: #909; color:inherit; text-decoration:inherit}
 
-    .reference-content {height: 400px; overflow: auto;}
-    .context-menu {font-size: small;}
+   /* .reference-content {height: 400px; overflow: auto;}
+*/
+    .content-wrapper {     
+        background:#fff;
+        color: :#000;
+        height: 400px; 
+        overflow: auto;
+    }
+    .expose {
+        position: relative;
+        overflow:auto;    
+    }
+
+    #overlay {
+        background:rgba(0,0,0,0.6);
+        display:none;
+        width:100%; height:100%;
+        fixed: false;
+        position:absolute; top:0; left:0; z-index:99998;
+    }​
 
     a.disabled-link,
     a.disabled-link:visited ,
@@ -41,7 +62,6 @@
   </style>
 
   <script type="text/javascript">
-
     var references = [];
     var referencesCurrent = [];
     var referencesContent = [];
@@ -55,9 +75,16 @@
           $(".nicEdit-main").dblclick(function() {
             toggleEditor();
           });
+          $(".content-wrapper").css('z-index','99999');
+          $('#overlay').fadeIn(300);
+          $(".btn-toggle-editor").show();
       } else {
         editorPane.removeInstance('reference-content');
         editorPane = null;
+        $(".btn-toggle-editor").hide();
+        $('#overlay').fadeOut(300, function(){
+            $('.expose').css('z-index','1');
+        });
       }
     }
 
@@ -67,11 +94,6 @@
       referencesContent = [];
       $('.references').find('option').remove().end();
       $('span.highlight').contents().unwrap();
-    }
-
-    function addContextMenu() {
-      $('span.highlight').attr("data-toggle", "context");
-      $('div.reference-content').attr("data-toggle", "context");
     }
 
     function removeRef(node, key) {
@@ -85,6 +107,7 @@
             }
         }
       });
+      $(".question").val("");
     }
 
     function addHighlights(node) {
@@ -100,7 +123,7 @@
                 spanTitle += trim(referencesCurrent[i]);
               }
 
-              $(this).wrap('<span class="highlight highlight' + referencesCurrent.length + '" title="' + spanTitle + '" ref="' + spanTitle + '" data-target="#context-menu" />');
+              $(this).wrap('<span class="highlight highlight' + referencesCurrent.length + '" title="' + spanTitle + '" ref="' + spanTitle + '" />');
 
               for (i=0;i<referencesCurrent.length;i++) {
                 var key = trim(referencesCurrent[i]);
@@ -186,7 +209,7 @@
         // $(document.body).animate({
         //     'scrollTop': $('.' + anchorTag).offset().top
         // }, 1000);
-        $(".reference-content").scrollTo($('.' + anchorTag), 800); 
+        $(".content-wrapper").scrollTo($('.' + anchorTag), 800); 
       } else {
         $('.alert-error').html("You must first select a reference before you can go to it.").fadeIn().delay(2000).fadeOut('slow');
       }
@@ -225,20 +248,110 @@
 
           stripHighlights();
           addHighlights($(".content-wrapper"));
-          addContextMenu();
         } else {
           $('.alert-error').html("You must first select text before you can create a reference.").fadeIn().delay(2000).fadeOut('slow');
         }
     }
 
+    function removeReference() {
+      var key = $(contextMenuTriggerElement).closest("span.highlight").attr("ref");
+      if (key != null && key.length > 0) {
+        removeRef($('.reference-content'), key);
+        stripHighlights();
+        addHighlights($(".content-wrapper"));
+      }
+      return false;
+    }
+
+    var contextMenuTriggerElement = null;
+
     $(document).ready(function() {
+      $.contextMenu({
+          selector: '.highlight', 
+          callback: function(key, options) {
+            if (key == 'remove-reference') {
+              removeReference();
+            }
+              // var m = "clicked: " + key;
+              // window.console && console.log(m) || alert(m); 
+          },
+          items: {
+              "remove-reference": {name: "Remove Reference"}
+          },
+          events: {
+            show: function(opt) {
+                // this is the trigger element
+                var $this = this;
+                contextMenuTriggerElement = this;
+                // import states from data store 
+                $.contextMenu.setInputValues(opt, $this.data());
+                // this basically fills the input commands from an object
+                // like {name: "foo", yesno: true, radio: "3", …}
+            }, 
+            hide: function(opt) {
+                // this is the trigger element
+                var $this = this;
+                // export states to data store
+                $.contextMenu.getInputValues(opt, $this.data());
+                // this basically dumps the input commands' values to an object
+                // like {name: "foo", yesno: true, radio: "3", …}
+            }
+        }
+      });
+
+
+      $.contextMenu({
+          selector: '.reference-content', 
+          callback: function(key, options) {
+            if (key == 'edit') {
+              toggleEditor();
+            } else if (key == 'create-reference') {
+              createReference();
+            }
+
+
+              // var m = "clicked: " + key;
+              // window.console && console.log(m) || alert(m); 
+          },
+          items: {
+              "edit": {name: "Edit"},
+              "sep1": "---------",
+              "create-reference": {name: "Create Reference"},
+          },
+          events: {
+            show: function(opt) {
+                // this is the trigger element
+                var $this = this;
+                contextMenuTriggerElement = this;
+                // import states from data store 
+                $.contextMenu.setInputValues(opt, $this.data());
+ 
+                // var newText = '<!-- ref' + refCounterFormated + ' -->' + selectedText + '<!-- ref' + refCounterFormated + ' -->';
+                // document.selection.createRange().pasteHTML(newText);
+               // this basically fills the input commands from an object
+                // like {name: "foo", yesno: true, radio: "3", …}
+            }, 
+            hide: function(opt) {
+                // this is the trigger element
+                var $this = this;
+                // export states to data store
+                $.contextMenu.getInputValues(opt, $this.data());
+                // this basically dumps the input commands' values to an object
+                // like {name: "foo", yesno: true, radio: "3", …}
+            }
+        }
+      });
+
+      
+
+      $(".btn-toggle-editor").hide();
+
+
       addHighlights($(".content-wrapper"));
-      addContextMenu();
 
       $(".btn-clear-hightlighting").click(function() {
         stripHighlights();
         addHighlights($(".content-wrapper"));
-        addContextMenu();
       });
 
       $(".btn-add-ref").click(function() {
@@ -262,17 +375,12 @@
         gotoReference();
       });
 
-      $(".btn-create-context-menu").click(function() {
-        addContextMenu();
-      });
-
       $(".btn-remove-ref").click(function() {
         var key = $(".references option:selected").val();
         if (key != null && key.length > 0) {
           removeRef($('.reference-content'), key);
           stripHighlights();
           addHighlights($(".content-wrapper"));
-          addContextMenu();
         } else {
           $('.alert-error').html("You must first select a reference before you can remove it.").fadeIn().delay(2000).fadeOut('slow');
         }
@@ -282,15 +390,14 @@
         createReference();
       });
 
+
+
       $(".remove-ref").click(function() {
         var key = $(this).closest("span.highlight").attr("ref");
-        console.log("remove-ref: " + key);
         if (key != null && key.length > 0) {
           removeRef($('.reference-content'), key);
           stripHighlights();
           addHighlights($(".content-wrapper"));
-          addContextMenu();
-          $("div.context-menu").removeClass("open");
         }
         return false;
       });
@@ -308,12 +415,17 @@
         toggleEditor();
       });
 
+      $(".btn-toggle-editor").click(function() {
+        toggleEditor();
+      });
+
     });
   </script>
 
 
   </head>
   <body>
+    <div id="overlay"></div>​
 
   <div class="container">
 
@@ -325,7 +437,7 @@
           <div class="span6">
             <div class="alert alert-success" style="min-height: 180px;">
               <h3>References</h3>
-              <select size="4" class="references" style="min-width: 400px;">
+              <select size="4" class="references" style="min-width: 400px; scroll: auto;">
               </select>
               <div>
                 <a href="#grab" class="btn btn-primary btn-add-ref">Create</a>
@@ -344,19 +456,10 @@
         </div>
     </div>
 
-    <div id="context-menu" class="context-menu">
-      <ul class="dropdown-menu" role="menu">
-        <li><a tabindex="-1" href="#toggle-editor" class="toggle-editor">Edit</a></li>
-        <li class="divider"></li>
-        <li><a tabindex="-1" href="#create-ref" class="create-ref">Create Reference</a></li>
-        <li><a tabindex="-1" href="#remove-ref" class="remove-ref">Remove Reference</a></li>
-      </ul>
-    </div>
-
-
   <div class="alert alert-warning">
-    <div class="content-wrapper">
-    <div class="reference-content well" id="reference-content" data-target="#context-menu">
+    <div class="content-wrapper expose">
+      <a href="#toggle-editor" class="btn btn-primary btn-toggle-editor"><< Leave Editor Mode</a>
+    <div class="reference-content well" id="reference-content">
 
 
     <h2>The quick <!-- ref01 -->brown<!-- ref01 --> fox <a href="http://www.urbandictionary.com/define.php?term=jum">jum</a>ped</h2>
